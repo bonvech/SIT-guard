@@ -12,6 +12,9 @@ def read_tuzik_status():
     ## run script on tuzik SIT computer
     cmd = 'sshpass -f tuzikey ssh root@192.168.1.200 /home/Tunka/guard/gu > ./status.dat'
     responce = os.system(cmd)
+    ## print status file to logfile
+    cmd = "cat ./status.dat >> guard_log.txt"
+    os.system(cmd)
     print(responce)
     if responce:
         alarm_text = f"Error in responce from tuzik: {responce} in function 'read_tuzik_status' "
@@ -44,6 +47,7 @@ def read_tuzik_status():
     text = "\n".join([text_date, text_free, text_recorded, text_status])
     print(text)
     bot.send_message(config.channel, text)
+
     return errors
 
 
