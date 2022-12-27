@@ -1,0 +1,19 @@
+#!/bin/bash
+date
+
+## search fregat in processes
+ps -u root |grep fregat
+
+## get available space on HDD
+df | grep Tunka
+
+## get size of data directory
+du /home/Tunka/Data | tail -1
+
+## get name of last dbg file
+ls -t /home/Tunka/Data | grep dbg | head -1
+
+## read status from last dbgfile
+cat /home/Tunka/Data/`ls -t /home/Tunka/Data | grep dbg | head -1` | grep Status | tail -1
+
+
