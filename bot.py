@@ -13,6 +13,11 @@ def read_tuzik_status():
     cmd = 'sshpass -f tuzikey ssh root@192.168.1.200 /home/Tunka/guard/gu > ./status.dat'
     responce = os.system(cmd)
     print(responce)
+    if responce:
+        alarm_text = f"Error in responce from tuzik: {responce} in function 'read_tuzik_status' "
+        print(alarm_text)
+        bot.send_message(config.alarm_channel, alarm_text)
+        return 2, None
 
     ## parse answer
     tuzik_status = open("./status.dat").read()
@@ -20,27 +25,25 @@ def read_tuzik_status():
     if "fregat" not in tuzik_status:
         alarm_text = "Error! No fregat process found on SIT computer! Check SIT computer and start fregat programm!"
         print(alarm_text)
-        bot.send_message(config.channel, alarm_text)
+        bot.send_message(config.alarm_channel, alarm_text)
         errors = 1
 
     tuzik_status = tuzik_status.split('\n')
-    print(tuzik_status[0])
+    text_date = tuzik_status[0]
     for line in tuzik_status:
         if "Status" in line:
-            text = line
-            print(text)
-            bot.send_message(config.channel, text)
+            text_status = line
         if 'sda' in line:
             size = int(line.split()[-3])
-            text = f'Free space: {size // 1024 // 1024} GB'
-            print(text)
-            bot.send_message(config.channel, text)
+            text_free = f'Free space: {size // 1024 // 1024} GB'
         if 'Data' in line:
             data_size = int(line.split()[0])
-            text = f'Recorded: {(data_size - data_size_prev) // 1024} MB'
-            print(text)
-            bot.send_message(config.channel, text)
+            text_recorded = f'Recorded: {(data_size - data_size_prev) // 1024} MB'
             data_size_prev = data_size
+
+    text = "\n".join([text_date, text_free, text_recorded, text_status])
+    print(text)
+    bot.send_message(config.channel, text)
     return errors
 
 
@@ -48,15 +51,21 @@ def read_tuzik_enable_status():
     errors = 0
 
     ##  get 'enable' file from tuzik
-    responce = os.system(". ./scpirt")
+    #cmd = "sshpass -f tuzikey scp root@192.168.1.200:/var/www/htdocs/enable.txt ./"
+    cmd = "sshpass -f tuzikey ssh root@192.168.1.200 cat /var/www/htdocs/enable.txt > ./enable.txt"
+    responce = os.system(cmd)
+
+    #responce = os.system(". ./scpirt")
     if responce:
-        alarm_text = f"Error in responce from tuzik: {responce}"
+        alarm_text = f"Error in responce from tuzik: {responce} in func 'read_tuzik_enable_status'"
         print(alarm_text)
-        bot.send_message(config.channel, alarm_text)
+        bot.send_message(config.alarm_channel, alarm_text)
+        errors = 1
 
     ## read enable status
     current_status = open("enable.txt").read().strip()
     return errors, current_status
+
 
 
 if __name__ == "__main__":
