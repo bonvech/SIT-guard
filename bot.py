@@ -34,11 +34,20 @@ def read_tuzik_status():
     tuzik_status = tuzik_status.split('\n')
     text_date = tuzik_status[0]
     for line in tuzik_status:
+        ##  get status line
         if "Status" in line:
             text_status = line
+        ##  available space on HDD
         if 'sda' in line:
             size = int(line.split()[-3])
             text_free = f'Free space: {size // 1024 // 1024} GB'
+            ##  if space < 2 Gb
+            if size // 1024 // 1024  < 2:
+                alarm_text = "Error! Available space less than 2 GB. " + text_free
+                print(alarm_text)
+                bot.send_message(config.alarm_channel, alarm_text)
+                errors = 1
+        ##  size of Tunka/Data directory
         if 'Data' in line:
             data_size = int(line.split()[0])
             text_recorded = f'Recorded: {(data_size - data_size_prev) // 1024} MB'
