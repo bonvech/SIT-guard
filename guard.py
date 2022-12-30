@@ -52,7 +52,7 @@ class SIT_guard():
 
 
     def get_info_from_tuzik(self, cmd):
-        if testing_mode:
+        if self.testing_mode:
             print(f"Test get_info_from_tuzik() \n{cmd}")
             return -1
         responce = os.system(cmd)
