@@ -232,7 +232,7 @@ if __name__ == "__main__":
             text = f"{guard.previous_enable_status} -> {guard.current_enable_status}"
             bot_responce = guard.send_info(text)
             if bot_responce:
-                self.print_to_log_file(bot_responce)
+                guard.print_to_log_file(bot_responce)
 
 
             ##  get tuzik status and print to bot
@@ -245,7 +245,7 @@ if __name__ == "__main__":
             text = f"{guard.current_operation_status}"
             bot_responce = guard.send_info(text)
             if bot_responce:
-                self.print_to_log_file(bot_responce)
+                guard.print_to_log_file(bot_responce)
 
 
         ##  in Enable mode sleep time is
