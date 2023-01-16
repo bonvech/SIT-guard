@@ -8,10 +8,18 @@ import datetime
 def send_text(channel, message, testing_mode=False):
     #print(message)
     if not testing_mode:
-        bot = telebot.TeleBot(config.token, parse_mode=None)
-        bot.send_message(channel, message)
+        try:
+            bot = telebot.TeleBot(config.token, parse_mode=None)
+            bot.send_message(channel, message)
+            return 0
+        except ValueError as ve:
+            print("\nError in write to telegramm!!!\n")
+            print(ve)
+            print(dir(ve))
+            return ve
     else:
         print(f"Print text:\n{message} \n to channel: {channel}")
+        return 0
 
 
 def text_sender(channel, testing_mode):
@@ -59,7 +67,9 @@ class SIT_guard():
         #print(responce)
         if responce:
             alarm_message = f"Error in responce from tuzik: {responce} in command " + cmd
-            self.send_alarm(alarm_message)
+            bot_responce = self.send_alarm(alarm_message)
+            if bot_responce:
+                self.print_to_log_file(bot_responce)
             return 1
         return 0
 
@@ -108,7 +118,9 @@ class SIT_guard():
 
     def send_status(self):
         self.parse_status()
-        self.send_info(self.tuzik_short_status)
+        bot_responce = self.send_info(self.tuzik_short_status)
+        if bot_responce:
+            self.print_to_log_file(bot_responce)
 
 
     def read_5s_data(self):
@@ -135,7 +147,9 @@ class SIT_guard():
         tuzik_status = self.tuzik_status
         if "fregat" not in tuzik_status:
             alarm_text = "Error! No fregat process found on SIT computer! Check SIT computer and start fregat programm!"
-            self.send_alarm(alarm_text)
+            bot_responce = self.send_alarm(alarm_text)
+            if bot_responce:
+                self.print_to_log_file(bot_responce)
             errors = 1
 
         tuzik_status = tuzik_status.split('\n')
@@ -154,8 +168,12 @@ class SIT_guard():
                 ##  if space < 2 Gb
                 if size // 1024 // 1024  < 2:
                     alarm_text = "Error! Available space less than 2 GB. " + self.text_free
-                    self.send_alarm(alarm_text)
+                    bot_responce = self.send_alarm(alarm_text)
                     errors = 1
+                    if bot_responce:
+                        self.print_to_log_file(bot_responce)
+                        errors = 2
+
 
             ##  size of Tunka/Data directory
             if 'Data' in line:
@@ -212,7 +230,10 @@ if __name__ == "__main__":
         ##  if enable status changed
         if guard.enable_status_changed():
             text = f"{guard.previous_enable_status} -> {guard.current_enable_status}"
-            guard.send_info(text)
+            bot_responce = guard.send_info(text)
+            if bot_responce:
+                self.print_to_log_file(bot_responce)
+
 
             ##  get tuzik status and print to bot
             guard.get_status()
@@ -222,7 +243,10 @@ if __name__ == "__main__":
         ##  if current operation status changed, print it
         if guard.operation_status_changed():
             text = f"{guard.current_operation_status}"
-            guard.send_info(text)
+            bot_responce = guard.send_info(text)
+            if bot_responce:
+                self.print_to_log_file(bot_responce)
+
 
         ##  in Enable mode sleep time is
         if "nable" in guard.current_enable_status: ## Enable
