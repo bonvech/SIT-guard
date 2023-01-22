@@ -31,26 +31,25 @@ def text_sender(channel, testing_mode):
 
 class SIT_guard():
     def __init__(self, testing_mode=False):
-        self.testing_mode  = testing_mode
+        self.testing_mode   = testing_mode
         self.data_size_prev = 0
-        self.free_space    = -1000
-        self.logfile       = "guard_log.txt"
+        self.free_space     = -1000
+        self.logfile        = "guard_log.txt"
         #self.enable_status = "SIT guard starts\n"
         self.previous_enable_status = "SIT guard starts\n"
         self.current_enable_status  = "SIT guard starts\n"
         self.previous_operation_status = "Dummy previous operation status"
         self.current_operation_status  = "Dummy current operation status"
-        self.tuzik_status  = "No ./status.dat file read yet"
+        self.tuzik_status  =       "No ./status.dat file read yet"
         self.tuzik_short_status  = "No ./status.dat file read yet"
-        self.m1_data       = "No ./1m.data file read yet"
-        self.s5_data       = "No ./5s.data file read yet"
+        self.m1_data       =       "No ./1m.data file read yet"
+        self.s5_data       =       "No ./5s.data file read yet"
         self.text_date, self.text_free, self.text_recorded, self.text_status = ['dummy status'] * 4
 
 
-        ## decorators for functions sending to bot 
+        ## decorators for functions sending to bot
         self.send_alarm = text_sender(config.channel_alarm, self.testing_mode)
         self.send_info  = text_sender(config.channel, self.testing_mode) 
-
 
 
 #    def send_info(self, message, testing_mode=True):
@@ -67,6 +66,7 @@ class SIT_guard():
         #print(responce)
         if responce:
             alarm_message = f"Error in responce from tuzik: {responce} in command " + cmd
+            self.print_to_log_file(alarm_message)
             bot_responce = self.send_alarm(alarm_message)
             if bot_responce:
                 self.print_to_log_file(bot_responce)
@@ -106,13 +106,16 @@ class SIT_guard():
         ## read enable status
         self.previous_enable_status = self.current_enable_status
         self.current_enable_status = open("enable.txt").read().strip()
-
+        if not self.current_enable_status:
+            self.current_enable_status = "Not connected"
         ## print to logfile
         self.print_to_log_file(self.current_enable_status)
 
 
     def read_status(self):
         self.tuzik_status = open("./status.dat").read()
+        if not self.tuzik_status:
+            self.tuzik_status = 'status id not available'
         self.print_to_log_file(self.tuzik_status)
 
 
@@ -125,6 +128,8 @@ class SIT_guard():
 
     def read_5s_data(self):
         self.s5_data = open("./5s.data").read().rstrip()
+        if not self.s5_data:
+            self.s5_data = '5s.data is unavailable '
         self.print_to_log_file(self.s5_data)
         #print([self.s5_data])
         #self.send_info(self.s5_data)
@@ -132,6 +137,8 @@ class SIT_guard():
 
     def read_1m_data(self):
         self.m1_data = open("./1m.data").read().rstrip()
+        if not self.m1_data:
+            self.m1_data = '1m.data is unavailable'
         self.print_to_log_file(self.m1_data)
         #print([self.m1_data])
         #self.send_info(self.m1_data)
@@ -166,7 +173,7 @@ class SIT_guard():
                 self.free_space = size
                 self.text_free = f'Free space: {size // 1024 // 1024} GB'
                 ##  if space < 2 Gb
-                if size // 1024 // 1024  < 2:
+                if size // 1024 // 1024  < 3:
                     alarm_text = "Error! Available space less than 2 GB. " + self.text_free
                     bot_responce = self.send_alarm(alarm_text)
                     errors = 1
