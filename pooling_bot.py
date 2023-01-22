@@ -50,5 +50,6 @@ def answer_to_messages(message):
 if __name__ == '__main__': 
     #guard = SIT_guard(testing_mode=True)
     guard = SIT_guard()
+    guard.set_log_file_name("guard_bot_log.txt")
 
     bot.infinity_polling() 

@@ -28,7 +28,8 @@ def text_sender(channel, testing_mode):
     return sender
 
 
-
+## -------------------------------------------------------------------
+## -------------------------------------------------------------------
 class SIT_guard():
     def __init__(self, testing_mode=False):
         self.testing_mode   = testing_mode
@@ -56,6 +57,12 @@ class SIT_guard():
 #        print(message)
 #        if not testing_mode:
 #            bot.send_message(config.channel, message)
+
+
+    ## ---------------------------------------------------------------
+    ## ---------------------------------------------------------------
+    def set_log_file_name(self, name):
+        self.logfile = name
 
 
     def get_info_from_tuzik(self, cmd):
@@ -153,7 +160,7 @@ class SIT_guard():
         ## parse status
         tuzik_status = self.tuzik_status
         if "fregat" not in tuzik_status:
-            alarm_text = "Error! No fregat process found on SIT computer! Check SIT computer and start fregat programm!"
+            alarm_text = "Error! No fregat process found on SIT computer! Check connection to SIT, or check SIT computer and start fregat programm!"
             bot_responce = self.send_alarm(alarm_text)
             if bot_responce:
                 self.print_to_log_file(bot_responce)
