@@ -69,6 +69,7 @@ class SIT_guard():
         if self.testing_mode:
             print(f"Test get_info_from_tuzik() \n{cmd}")
             return -1
+        cmd = cmd + " 2>> " + self.logfile
         responce = os.system(cmd)
         #print(responce)
         if responce:
@@ -122,7 +123,7 @@ class SIT_guard():
     def read_status(self):
         self.tuzik_status = open("./status.dat").read()
         if not self.tuzik_status:
-            self.tuzik_status = 'status id not available'
+            self.tuzik_status = 'status is not available'
         self.print_to_log_file(self.tuzik_status)
 
 
