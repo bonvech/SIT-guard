@@ -50,7 +50,7 @@ class SIT_guard():
 
         ## decorators for functions sending to bot
         self.send_alarm = text_sender(config.channel_alarm, self.testing_mode)
-        self.send_info  = text_sender(config.channel, self.testing_mode) 
+        self.send_info  = text_sender(config.channel,       self.testing_mode) 
 
 
 #    def send_info(self, message, testing_mode=True):
@@ -59,12 +59,15 @@ class SIT_guard():
 #            bot.send_message(config.channel, message)
 
 
-    ## ---------------------------------------------------------------
-    ## ---------------------------------------------------------------
+    ##  ---------------------------------------------------------------
+    ##  ---------------------------------------------------------------
     def set_log_file_name(self, name):
         self.logfile = name
 
 
+    ##  ---------------------------------------------------------------
+    ##  послать команду на тузика, проверить прохождение команды
+    ##  ---------------------------------------------------------------
     def get_info_from_tuzik(self, cmd):
         if self.testing_mode:
             print(f"Test get_info_from_tuzik() \n{cmd}")
@@ -82,18 +85,27 @@ class SIT_guard():
         return 0
 
 
+    ##  ---------------------------------------------------------------
+    ##  послать команду на запрос полной информации путем выполнения скрипта на тузике
+    ##  ---------------------------------------------------------------
     def get_status(self):
         ## run script on tuzik SIT computer
         cmd = 'sshpass -f tuzikey ssh root@192.168.1.200 /home/Tunka/guard/gu > ./status.dat'
         self.get_info_from_tuzik(cmd)
 
 
+    ##  ---------------------------------------------------------------
+    ##  get file enable.txt from tuzik
+    ##  ---------------------------------------------------------------
     def get_enable_status(self):
         ##  get 'enable' file from tuzik
         cmd = "sshpass -f tuzikey ssh root@192.168.1.200 cat /var/www/htdocs/enable.txt > ./enable.txt"
         self.get_info_from_tuzik(cmd)
 
 
+    ##  ---------------------------------------------------------------
+    ##  get files 1m.data and 5s.data from tuzik
+    ##  ---------------------------------------------------------------
     def get_period_data(self):
         ##  get 1m and 5s files from tuzik
         cmd = "sshpass -f tuzikey ssh root@192.168.1.200 cat /var/www/htdocs/1m.data > ./1m.data"
@@ -102,6 +114,8 @@ class SIT_guard():
         self.get_info_from_tuzik(cmd)
 
 
+    ##  ---------------------------------------------------------------
+    ##  ---------------------------------------------------------------
     def print_to_log_file(self, text):
         text = str(datetime.datetime.today())[:19] + "    " + text
         print(text)
@@ -110,6 +124,8 @@ class SIT_guard():
         f.close()
 
 
+    ##  ---------------------------------------------------------------
+    ##  ---------------------------------------------------------------
     def read_enable_status(self):
         ## read enable status
         self.previous_enable_status = self.current_enable_status
@@ -120,13 +136,17 @@ class SIT_guard():
         self.print_to_log_file(self.current_enable_status)
 
 
+    ##  ---------------------------------------------------------------
+    ##  ---------------------------------------------------------------
     def read_status(self):
         self.tuzik_status = open("./status.dat").read()
         if not self.tuzik_status:
-            self.tuzik_status = 'status is not available'
+            self.tuzik_status = 'status file is not available'
         self.print_to_log_file(self.tuzik_status)
 
 
+    ##  ---------------------------------------------------------------
+    ##  ---------------------------------------------------------------
     def send_status(self):
         self.parse_status()
         bot_responce = self.send_info(self.tuzik_short_status)
@@ -134,6 +154,8 @@ class SIT_guard():
             self.print_to_log_file(bot_responce)
 
 
+    ##  ---------------------------------------------------------------
+    ##  ---------------------------------------------------------------
     def read_5s_data(self):
         self.s5_data = open("./5s.data").read().rstrip()
         if not self.s5_data:
@@ -143,6 +165,8 @@ class SIT_guard():
         #self.send_info(self.s5_data)
 
 
+    ##  ---------------------------------------------------------------
+    ##  ---------------------------------------------------------------
     def read_1m_data(self):
         self.m1_data = open("./1m.data").read().rstrip()
         if not self.m1_data:
@@ -152,11 +176,15 @@ class SIT_guard():
         #self.send_info(self.m1_data)
 
 
+    ##  ---------------------------------------------------------------
+    ##  ---------------------------------------------------------------
     def read_period_data(self):
         self.read_5s_data()
         self.read_1m_data()
 
 
+    ##  ---------------------------------------------------------------
+    ##  ---------------------------------------------------------------
     def parse_status(self):
         ## parse status
         tuzik_status = self.tuzik_status
@@ -201,6 +229,8 @@ class SIT_guard():
         #self.send_info(text)
 
 
+    ##  ---------------------------------------------------------------
+    ##  ---------------------------------------------------------------
     def operation_status_changed(self):
         ##  get file with operation status 
         self.get_period_data()
@@ -220,6 +250,8 @@ class SIT_guard():
         return False
 
 
+    ##  ---------------------------------------------------------------
+    ##  ---------------------------------------------------------------
     def enable_status_changed(self):
         ##  read enable status
         self.get_enable_status()
