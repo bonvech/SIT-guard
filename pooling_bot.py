@@ -46,6 +46,7 @@ def any_msg(message):
 def answer_to_messages(message): 
     if message.text == "Status":
         guard.read_enable_status()
+        guard.get_status()
         guard.read_status()
         guard.parse_status()
         text = guard.tuzik_short_status + '\n' + guard.current_enable_status

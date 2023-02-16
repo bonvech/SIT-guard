@@ -33,19 +33,25 @@ def text_sender(channel, testing_mode):
 class SIT_guard():
     def __init__(self, testing_mode=False):
         self.testing_mode   = testing_mode
+        self.data_size_before_enable_change = 0
         self.data_size_prev = 0
-        self.free_space     = -1000
+        self.free_space     = -1000     ## free HDD space
+        self.mosaic_current = 0         ## mosaic current
+        self.min_mosaic_current = 0.01  ## if current is small - array is covered
+        self.max_mosaic_current = 2.00  ## if current is big   - array is open
         self.logfile        = "guard_log.txt"
+
         #self.enable_status = "SIT guard starts\n"
         self.previous_enable_status = "SIT guard starts\n"
         self.current_enable_status  = "SIT guard starts\n"
         self.previous_operation_status = "Dummy previous operation status"
         self.current_operation_status  = "Dummy current operation status"
-        self.tuzik_status  =       "No ./status.dat file read yet"
+        self.tuzik_status        = "No ./status.dat file read yet"
         self.tuzik_short_status  = "No ./status.dat file read yet"
-        self.m1_data       =       "No ./1m.data file read yet"
-        self.s5_data       =       "No ./5s.data file read yet"
+        self.m1_data             = "No ./1m.data file read yet"
+        self.s5_data             = "No ./5s.data file read yet"
         self.text_date, self.text_free, self.text_recorded, self.text_status = ['dummy status'] * 4
+
 
 
         ## decorators for functions sending to bot
@@ -184,6 +190,73 @@ class SIT_guard():
 
 
     ##  ---------------------------------------------------------------
+    ##  прочитать значение тока из файла
+    ##  ---------------------------------------------------------------
+    def parse_current_from_1m_data(self):
+        for line in self.m1_data.split('\n'):
+            if not "Mosaic" in line:
+                continue
+            self.mosaic_current = float(line.split()[-2])
+        #print(self.mosaic_current)
+
+
+    ##  ---------------------------------------------------------------
+    ##  проверить является ли величина тока мозаики маленькой
+    ##  при Enable - свидетельствует о закрытой крышке
+    ##  ---------------------------------------------------------------
+    def mosaic_current_is_small(self):
+        self.parse_current_from_1m_data()
+        return self.mosaic_current < self.min_mosaic_current
+
+
+    ##  ---------------------------------------------------------------
+    ##  проверить ток мозаики, если маленький - послать alarm
+    ##  при Enable - свидетельствует о закрытой крышке, нужно выключить установку
+    ##  ---------------------------------------------------------------
+    def check_mosaic_current_is_small(self):
+        if self.mosaic_current_is_small():
+            alarm_message = f"Mosaic current is small: {self.mosaic_current} mA. "
+            alarm_message += f"Enable status is \"{self.current_enable_status.strip()}\". "
+            alarm_message += "Крышки закрыты. Установку следует перевести в состояние Disable!"
+            self.print_to_log_file(alarm_message)
+            bot_responce = self.send_alarm(alarm_message)
+            if bot_responce:
+                self.print_to_log_file(bot_responce)
+
+
+    ##  ---------------------------------------------------------------
+    ##  проверить является ли величина тока мозаики большой
+    ##  при Disable - свидетельствует об открытьй крышке
+    ##  ---------------------------------------------------------------
+    def mosaic_current_is_big(self):
+        self.parse_current_from_1m_data()
+        return self.mosaic_current > self.max_mosaic_current
+
+
+    ##  ---------------------------------------------------------------
+    ##  проверить ток мозаики, если большой - послать alarm
+    ##  при Disable - свидетельствует об открытой крышке днем
+    ##  ---------------------------------------------------------------
+    def check_mosaic_current_is_big(self):
+        if self.mosaic_current_is_big():
+            alarm_message = f"Mosaic current is big: {self.mosaic_current} mA. "
+            alarm_message += f"Enable status is \"{self.current_enable_status.strip()}\". "
+            alarm_message += "Крышки открыты днем. Закройте крышки!"
+            self.print_to_log_file(alarm_message)
+            bot_responce = self.send_alarm(alarm_message)
+            if bot_responce:
+                self.print_to_log_file(bot_responce)
+
+
+    ##  ---------------------------------------------------------------
+    ##  скачать файл 1m файл и вычитать из него значение тока
+    ##  ---------------------------------------------------------------
+    def get_mosaic_current(self):
+        self.read_1m_data()
+        self.parse_current_from_1m_data()
+
+
+    ##  ---------------------------------------------------------------
     ##  ---------------------------------------------------------------
     def parse_status(self):
         ## parse status
@@ -222,7 +295,8 @@ class SIT_guard():
             if 'Data' in line:
                 data_size = int(line.split()[0])
                 #self.text_recorded = f'Recorded: {(data_size) // 1024} MB'
-                self.text_recorded = f'Recorded: {(data_size - self.data_size_prev) // 1024} MB'
+                #self.text_recorded = f'Recorded: {(data_size - self.data_size_prev) // 1024} MB'
+                self.text_recorded = f'Recorded: {(data_size - self.data_size_before_enable_change) // 1024} MB'
                 self.data_size_prev = data_size
 
         self.tuzik_short_status = "\n".join([self.text_date, self.text_free, self.text_recorded, self.text_status])
@@ -276,7 +350,7 @@ if __name__ == "__main__":
     while True:
         ##  if enable status changed
         if guard.enable_status_changed():
-            text = f"{guard.previous_enable_status} -> {guard.current_enable_status}"
+            text = f"{guard.previous_enable_status.rstrip()} -> {guard.current_enable_status.rstrip()}"
             bot_responce = guard.send_info(text)
             if bot_responce:
                 guard.print_to_log_file(bot_responce)
@@ -287,6 +361,8 @@ if __name__ == "__main__":
             guard.read_status()
             guard.send_status()
 
+            guard.data_size_before_enable_change = guard.data_size_prev
+
         ##  if current operation status changed, print it
         if guard.operation_status_changed():
             text = f"{guard.current_operation_status}"
@@ -295,10 +371,14 @@ if __name__ == "__main__":
                 guard.print_to_log_file(bot_responce)
 
 
-        ##  in Enable mode sleep time is
+        ##  Enable
         if "nable" in guard.current_enable_status: ## Enable
-            sleep_time = 120  ## Enable
+            ## Enable
+            guard.check_mosaic_current_is_small()  ##  check current
+            sleep_time = 120
         else:
-            sleep_time = 600  ## Disable
+            ## Disable
+            guard.check_mosaic_current_is_big()
+            sleep_time = 600
 
         time.sleep(sleep_time)
