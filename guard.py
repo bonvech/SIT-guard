@@ -193,6 +193,7 @@ class SIT_guard():
     ##  прочитать значение тока из файла
     ##  ---------------------------------------------------------------
     def parse_current_from_1m_data(self):
+        #print(self.m1_data)
         for line in self.m1_data.split('\n'):
             if not "Mosaic" in line:
                 continue
@@ -206,6 +207,7 @@ class SIT_guard():
     ##  ---------------------------------------------------------------
     def mosaic_current_is_small(self):
         self.parse_current_from_1m_data()
+        print(self.mosaic_current, self.min_mosaic_current)
         return self.mosaic_current < self.min_mosaic_current
 
 
@@ -214,6 +216,8 @@ class SIT_guard():
     ##  при Enable - свидетельствует о закрытой крышке, нужно выключить установку
     ##  ---------------------------------------------------------------
     def check_mosaic_current_is_small(self):
+        self.get_period_data()
+        self.read_1m_data()
         if self.mosaic_current_is_small():
             alarm_message = f"Mosaic current is small: {self.mosaic_current} mA. "
             alarm_message += f"Enable status is \"{self.current_enable_status.strip()}\". "
@@ -229,6 +233,8 @@ class SIT_guard():
     ##  при Disable - свидетельствует об открытьй крышке
     ##  ---------------------------------------------------------------
     def mosaic_current_is_big(self):
+        self.get_period_data()
+        self.read_1m_data()
         self.parse_current_from_1m_data()
         return self.mosaic_current > self.max_mosaic_current
 
