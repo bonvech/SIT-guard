@@ -174,7 +174,12 @@ class SIT_guard():
     ##  ---------------------------------------------------------------
     ##  ---------------------------------------------------------------
     def read_1m_data(self):
-        self.m1_data = open("./1m.data").read().rstrip()
+        #self.m1_data = open("./1m.data").read().rstrip()
+        text = open("./1m.data").read().rstrip()
+        print(text)
+        text = [a for a in text.split('\n') if "CH" not in a]
+        print(text)
+        self.m1_data = '\n'.join(text)
         if not self.m1_data:
             self.m1_data = '1m.data is unavailable'
         self.print_to_log_file(self.m1_data)
@@ -377,8 +382,8 @@ if __name__ == "__main__":
                 guard.print_to_log_file(bot_responce)
 
 
-        ##  Enable
-        if "nable" in guard.current_enable_status: ## Enable
+        ##  check current
+        if "nable" in guard.current_enable_status and "operation" in self.current_operation_status.lower():
             ## Enable
             guard.check_mosaic_current_is_small()  ##  check current
             sleep_time = 120

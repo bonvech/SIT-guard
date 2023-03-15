@@ -1,3 +1,5 @@
+import os
+import subprocess
 import telebot
 from telebot import types
 import guard
@@ -29,16 +31,24 @@ def get_weather():
     return "\n".join(clouds)
 
 
+##  check if the guard programm is runing
+def check_guard():
+    cmd = "ps -u | grep python| grep guard.py | wc -l"
+    ans = subprocess.check_output(cmd, shell=True)
+    ans = int(ans)
+
+    if ans > 1:
+        text = f"Guard is running, code = {ans}"
+    else:
+        text = f"No guard programm found: code = {ans}"
+        guard.send_alarm(text)
+    return text
+
 
 @bot.message_handler(commands = ['start'])
 def any_msg(message):
     keyboard = types.ReplyKeyboardMarkup(resize_keyboard = True, row_width=3)
-    btn1 = types.KeyboardButton(text="Status")
-    btn2 = types.KeyboardButton(text="Params") 
-    btn3 = types.KeyboardButton(text="5sec")
-    btn4 = types.KeyboardButton(text="Refresh")
-    btn5 = types.KeyboardButton(text="Weather")
-    keyboard.add(btn1, btn2, btn3, btn4, btn5)
+    keyboard.add(btn1, btn2, btn3, btn4, btn5, btn6)
     bot.send_message(message.chat.id, "Choose action from keyboard", reply_markup=keyboard)
 
 
@@ -61,23 +71,28 @@ def answer_to_messages(message):
         text = "Choose next action"
     elif message.text == "Weather":
         text = get_weather()
+    elif message.text == "Guard":
+        text = check_guard()
     else:
         text = "Choose action"
 
     keyboard = types.ReplyKeyboardMarkup(resize_keyboard = True, row_width=3)
-    btn1 = types.KeyboardButton(text="Status")
-    btn2 = types.KeyboardButton(text="Params") 
-    btn3 = types.KeyboardButton(text="5sec")
-    btn4 = types.KeyboardButton(text="Refresh")
-    btn5 = types.KeyboardButton(text="Weather")
-    keyboard.add(btn1, btn2, btn3, btn4, btn5)
+    keyboard.add(btn1, btn2, btn3, btn4, btn5, btn6)
     bot.send_message(message.chat.id, text, reply_markup=keyboard)
     #print(message.chat.id, text)
+
 
 
 if __name__ == '__main__': 
     #guard = SIT_guard(testing_mode=True)
     guard = SIT_guard()
     guard.set_log_file_name("guard_bot_log.txt")
+
+    btn1 = types.KeyboardButton(text="Status")
+    btn2 = types.KeyboardButton(text="Params")
+    btn3 = types.KeyboardButton(text="5sec")
+    btn4 = types.KeyboardButton(text="Refresh")
+    btn5 = types.KeyboardButton(text="Weather")
+    btn6 = types.KeyboardButton(text="Guard")
 
     bot.infinity_polling() 
